@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../core/BaseModel.php';
+require_once __DIR__ . '/../core/BaseModel.php';
 
 class UserModel extends BaseModel
 {
