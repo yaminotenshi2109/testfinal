@@ -403,7 +403,7 @@ class ViolationController extends BaseController
         $this->verifyCsrf();
 
         $id = (int)$params['id'];
-        $reason = $this->request('reason', '');
+        $reason = $this->request('appeal_note') ?? $this->request('reason', '');
 
         if (!$reason || strlen($reason) < 10) {
             $this->jsonError(
@@ -438,17 +438,19 @@ class ViolationController extends BaseController
             $this->db->update(
                 'violation_records',
                 [
-                    'status'        => 'appealed',
-                    'appeal_reason' => $reason,
-                    'appealed_at'   => date('Y-m-d H:i:s'),
+                    'status'      => 'appealed',
+                    'appeal_note' => $reason,
                 ],
                 'id = ?',
                 [$id]
             );
 
             // Notify admin
+            $admin = $this->db->selectOne("SELECT id FROM users WHERE role = 'admin' AND status = 'active' LIMIT 1");
+            $adminId = $admin ? (int)$admin['id'] : 1;
+
             $this->db->insert('notifications', [
-                'user_id' => null,  // Send to all admins later
+                'user_id' => $adminId,
                 'title'   => 'Sinh viên khiếu nại vi phạm',
                 'message' => "Sinh viên " . $violation['student_id'] . " khiếu nại vi phạm #" . $id,
                 'type'    => 'violation',
@@ -495,10 +497,8 @@ class ViolationController extends BaseController
             $this->db->update(
                 'violation_records',
                 [
-                    'status'                 => 'active',
-                    'appeal_dismiss_reason'  => $reason,
-                    'appeal_dismissed_at'    => date('Y-m-d H:i:s'),
-                    'appeal_dismissed_by'    => $this->auth('id'),
+                    'status'      => 'active',
+                    'appeal_note' => ($violation['appeal_note'] ?? '') . " | Bác bỏ khiếu nại. Lý do: " . $reason,
                 ],
                 'id = ?',
                 [$id]
@@ -556,9 +556,8 @@ class ViolationController extends BaseController
                 $db->update(
                     'violation_records',
                     [
-                        'status'              => 'dismissed',
-                        'appeal_accepted_at'  => date('Y-m-d H:i:s'),
-                        'appeal_accepted_by'  => $this->auth('id'),
+                        'status'      => 'dismissed',
+                        'appeal_note' => ($violation['appeal_note'] ?? '') . " | Chấp nhận khiếu nại.",
                     ],
                     'id = ?',
                     [$id]
@@ -713,11 +712,13 @@ class ViolationController extends BaseController
                     "SELECT COUNT(DISTINCT student_id) FROM violation_records"
                 ),
                 'banned_students' => $this->db->selectValue(
-                    "SELECT COUNT(DISTINCT student_id)
-                     FROM violation_records
-                     WHERE status = 'active'
-                     GROUP BY student_id
-                     HAVING SUM(penalty_points) >= ?",
+                    "SELECT COUNT(*) FROM (
+                        SELECT student_id
+                        FROM violation_records
+                        WHERE status = 'active'
+                        GROUP BY student_id
+                        HAVING SUM(penalty_points) >= ?
+                     ) AS banned",
                     [VIOLATION_THRESHOLD]
                 ),
             ],

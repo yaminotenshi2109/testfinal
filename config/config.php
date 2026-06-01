@@ -10,7 +10,7 @@
 // ── Môi trường ───────────────────────────────────────────────
 define('APP_ENV',   getenv('APP_ENV') ?: 'development');  // 'development' | 'production'
 define('APP_NAME',  'Hệ Thống Quản Lý KTX');
-define('APP_URL',   'http://localhost/test-final/public');  // URL gốc của ứng dụng
+define('APP_URL',   'http://localhost/testfinal/public');  // URL gốc của ứng dụng
 define('APP_DEBUG', APP_ENV === 'development');
 
 // ── Database ─────────────────────────────────────────────────

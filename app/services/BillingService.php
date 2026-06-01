@@ -148,20 +148,16 @@ class BillingService
 
                 $invoiceId = $db->insert('invoices', [
                     'contract_id'        => $contract['id'],
-                    'student_id'         => $contract['student_id'],
                     'month'              => $month,
                     'year'               => $year,
                     'base_rent'          => $baseRent,
                     'electricity_fee'    => $electricityFee,
                     'water_fee'          => $waterFee,
                     'ac_fee'             => $acFee,
-                    'other_fees'         => $otherFees,
-                    'discount'           => $discount,
-                    'late_fee'           => $lateFee,
+                    'other_fee'          => $otherFees,
                     'total_amount'       => $totalAmount,
                     'status'             => self::STATUS_PENDING,
                     'due_date'           => $dueDate,
-                    'created_at'         => date('Y-m-d H:i:s'),
                 ]);
 
                 // ─── Step 10: Send notification ────────────────
@@ -307,13 +303,13 @@ class BillingService
                     'status'        => self::STATUS_PAID,
                     'paid_at'       => date('Y-m-d H:i:s'),
                     'payment_method' => $paymentMethod,
-                    'transaction_id' => $transactionId,
                 ], 'id = ?', [$invoiceId]);
 
                 // Send notification to student
                 $student = $db->selectOne(
                     "SELECT s.user_id FROM invoices i
-                     JOIN students s ON s.id = i.student_id
+                     JOIN contracts c ON c.id = i.contract_id
+                     JOIN students s ON s.id = c.student_id
                      WHERE i.id = ?",
                     [$invoiceId]
                 );
@@ -482,11 +478,18 @@ class BillingService
      */
     private function getElectricityRate(): float
     {
-        $rate = $this->db->selectValue(
-            "SELECT value FROM settings WHERE key = 'electricity_rate'"
-        );
+        try {
+            $rate = $this->db->selectValue(
+                "SELECT value FROM settings WHERE `key` = 'electricity_rate'"
+            );
+            if ($rate !== null && $rate !== false) {
+                return (float)$rate;
+            }
+        } catch (\Throwable $e) {
+            // Settings table might not exist, ignore and use fallback
+        }
 
-        return $rate ? (float)$rate : (float)self::DEFAULT_ELECTRICITY_RATE;
+        return defined('DEFAULT_ELEC_RATE') ? (float)DEFAULT_ELEC_RATE : (float)self::DEFAULT_ELECTRICITY_RATE;
     }
 
     /**
@@ -494,11 +497,18 @@ class BillingService
      */
     private function getWaterRate(): float
     {
-        $rate = $this->db->selectValue(
-            "SELECT value FROM settings WHERE key = 'water_rate'"
-        );
+        try {
+            $rate = $this->db->selectValue(
+                "SELECT value FROM settings WHERE `key` = 'water_rate'"
+            );
+            if ($rate !== null && $rate !== false) {
+                return (float)$rate;
+            }
+        } catch (\Throwable $e) {
+            // Settings table might not exist, ignore and use fallback
+        }
 
-        return $rate ? (float)$rate : (float)self::DEFAULT_WATER_RATE;
+        return defined('DEFAULT_WATER_RATE') ? (float)DEFAULT_WATER_RATE : (float)self::DEFAULT_WATER_RATE;
     }
 
     /**

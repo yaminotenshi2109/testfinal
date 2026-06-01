@@ -11,6 +11,23 @@
 
 declare(strict_types=1);
 
+if (!function_exists('getDynamicUrl')) {
+    function getDynamicUrl(string $path): string {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $publicBase = rtrim(dirname($scriptName), '/\\');
+        $rootBase   = rtrim(dirname($publicBase), '/\\');
+
+        if (str_contains($requestUri, '/public/') || str_ends_with($requestUri, '/public')) {
+            $base = $publicBase;
+        } else {
+            $base = ($rootBase !== '' && $rootBase !== '/' && $rootBase !== '\\') ? $rootBase : '';
+        }
+
+        return $base . $path;
+    }
+}
+
 // ── Bảo mật: không hiện lỗi PHP ra browser ───────────────────
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');

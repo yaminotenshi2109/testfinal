@@ -73,7 +73,7 @@ $router->group('/student', function (Router $r) {
         ->where('id', '\d+');
 
     // Vi phạm của bản thân
-    $r->get('/violations', 'ViolationController@myViolations')->name('violation.my');
+    $r->get('/violations', 'ViolationController@studentViolations')->name('violation.my');
 
     // Thông báo
     $r->get('/notifications',         'NotificationController@index')->name('notification.index');
@@ -184,6 +184,9 @@ $router->group('/api', function (Router $r) {
     $r->get('/violations',         'ViolationApiController@index');
     $r->post('/violations',        'ViolationApiController@store');
     $r->delete('/violations/:id',  'ViolationApiController@destroy')->where('id', '\d+');
+    $r->post('/violations/:id/appeal', 'ViolationApiController@appeal')->where('id', '\d+');
+    $r->post('/violations/:id/accept-appeal', 'ViolationApiController@acceptAppeal')->where('id', '\d+');
+    $r->post('/violations/:id/dismiss-appeal', 'ViolationApiController@dismissAppeal')->where('id', '\d+');
 
     // Notifications
     $r->get('/notifications',              'NotificationApiController@index');

@@ -363,14 +363,6 @@ class RoomAllocationService
             ]);
 
             // 3. Tăng occupants
-            $db->update(
-                'rooms',
-                ['current_occupants' => new \PDOStatement()], // raw SQL
-                'id = ?',
-                [$roomId]
-            );
-
-            // Alternative: use raw query for increment
             $db->query(
                 "UPDATE rooms SET current_occupants = current_occupants + 1 WHERE id = ?",
                 [$roomId]

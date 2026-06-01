@@ -286,11 +286,11 @@ class ContractModel extends BaseModel
                 [$data['registration_id']]
             );
 
-            // 3. Tăng current_occupants (backup nếu trigger không kích hoạt)
-            $db->query(
-                "UPDATE rooms SET current_occupants = current_occupants + 1 WHERE id = ?",
-                [$data['room_id']]
-            );
+            // 3. Tăng current_occupants (bỏ vì DB trigger trg_contract_insert_inc_occupants tự động tăng)
+            // $db->query(
+            //     "UPDATE rooms SET current_occupants = current_occupants + 1 WHERE id = ?",
+            //     [$data['room_id']]
+            // );
 
             // 4. Gửi thông báo cho sinh viên
             $student = $db->selectOne(

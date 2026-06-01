@@ -9,6 +9,30 @@
 
 declare(strict_types=1);
 
+if (!function_exists('middlewareRedirect')) {
+    function middlewareRedirect(string $url): never
+    {
+        if (str_starts_with($url, '/')) {
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+            $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+            $publicBase = rtrim(dirname($scriptName), '/\\');
+            $rootBase   = rtrim(dirname($publicBase), '/\\');
+
+            if (str_contains($requestUri, '/public/') || str_ends_with($requestUri, '/public')) {
+                $base = $publicBase;
+            } else {
+                $base = ($rootBase !== '' && $rootBase !== '/' && $rootBase !== '\\') ? $rootBase : '';
+            }
+
+            if ($base !== '' && !str_starts_with($url, $base)) {
+                $url = $base . $url;
+            }
+        }
+        header("Location: {$url}");
+        exit;
+    }
+}
+
 class AuthMiddleware
 {
     public function handle(callable $next): void
@@ -30,8 +54,7 @@ class AuthMiddleware
 
             $_SESSION['_flash'][]       = ['type' => 'warning', 'message' => 'Vui lòng đăng nhập.'];
             $_SESSION['_intended_url']  = $_SERVER['REQUEST_URI'] ?? '/';
-            header('Location: /login');
-            exit;
+            middlewareRedirect('/auth/login');
         }
 
         $next();
@@ -96,8 +119,7 @@ class GuestMiddleware
         if (isset($_SESSION['_auth_user'])) {
             $role = $_SESSION['_auth_user']['role'] ?? 'student';
             $redirect = $role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
-            header("Location: {$redirect}");
-            exit;
+            middlewareRedirect($redirect);
         }
 
         $next();

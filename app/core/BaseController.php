@@ -79,7 +79,18 @@ abstract class BaseController
         $data['_flash']     = $this->getFlash();
         $data['_auth']      = $this->auth();
         $data['_old']       = $_SESSION['_old_input'] ?? [];
-        $data['_errors']    = $_SESSION['_errors']    ?? [];
+        
+        // Flatten errors array-of-arrays to array-of-strings
+        $rawErrors = $_SESSION['_errors'] ?? [];
+        $flatErrors = [];
+        foreach ($rawErrors as $field => $messages) {
+            if (is_array($messages)) {
+                $flatErrors[$field] = reset($messages) ?: '';
+            } else {
+                $flatErrors[$field] = (string)$messages;
+            }
+        }
+        $data['_errors']    = $flatErrors;
         $data['_csrfToken'] = $this->csrfToken();
 
         // Xóa old input và errors sau khi đã lấy
@@ -198,6 +209,22 @@ abstract class BaseController
      */
     protected function redirect(string $url, int $status = 302): never
     {
+        if (str_starts_with($url, '/')) {
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+            $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+            $publicBase = rtrim(dirname($scriptName), '/\\');
+            $rootBase   = rtrim(dirname($publicBase), '/\\');
+
+            if (str_contains($requestUri, '/public/') || str_ends_with($requestUri, '/public')) {
+                $base = $publicBase;
+            } else {
+                $base = ($rootBase !== '' && $rootBase !== '/' && $rootBase !== '\\') ? $rootBase : '';
+            }
+
+            if ($base !== '' && !str_starts_with($url, $base)) {
+                $url = $base . $url;
+            }
+        }
         http_response_code($status);
         header("Location: {$url}");
         exit;

@@ -37,7 +37,7 @@ demo('Singleton: cùng instance?', function () {
     $db2 = Database::getInstance();
 
     if ($db1 === $db2) {
-        echo "  ✓ Đúng — $db1 === $db2 (cùng object)\n";
+        echo "  ✓ Đúng — \$db1 === \$db2 (cùng object: " . spl_object_hash($db1) . ")\n";
     } else {
         echo "  ✗ Sai — không phải Singleton!\n";
     }

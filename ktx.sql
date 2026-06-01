@@ -556,19 +556,19 @@ DELIMITER ;
 -- Admin account (password: Admin@123)
 INSERT INTO `users` (`username`,`email`,`password_hash`,`role`) VALUES
 ('admin','admin@ktx.edu.vn',
- '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+ '$2y$12$YcUa8SlifN4ZjfKe9bkfDecuhJcwggsEk0Ncer.F9VTt0ffoRpnHC',
  'admin');
 
 -- Sinh viên mẫu (password: Student@123)
 INSERT INTO `users` (`username`,`email`,`password_hash`,`role`) VALUES
 ('sv001','nguyen.van.a@student.edu.vn',
- '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+ '$2y$12$P3odYaHQhYx4uflwHDtV8e.FQWoDdbP.sQZJwyS7WL3yTTcyj9CXq',
  'student'),
 ('sv002','tran.thi.b@student.edu.vn',
- '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+ '$2y$12$P3odYaHQhYx4uflwHDtV8e.FQWoDdbP.sQZJwyS7WL3yTTcyj9CXq',
  'student'),
 ('sv003','le.van.c@student.edu.vn',
- '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+ '$2y$12$P3odYaHQhYx4uflwHDtV8e.FQWoDdbP.sQZJwyS7WL3yTTcyj9CXq',
  'student');
 
 INSERT INTO `students`

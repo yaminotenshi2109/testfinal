@@ -73,8 +73,8 @@ class BillingController extends BaseController
         $result = $this->db->paginate(
             "SELECT i.*, s.full_name, s.student_code, r.room_number
              FROM invoices i
-             JOIN students s ON s.id = i.student_id
              JOIN contracts c ON c.id = i.contract_id
+             JOIN students s ON s.id = c.student_id
              JOIN rooms r ON r.id = c.room_id
              WHERE {$where}
              ORDER BY i.created_at DESC",
@@ -106,8 +106,8 @@ class BillingController extends BaseController
         $invoice = $this->db->selectOne(
             "SELECT i.*, s.full_name, s.student_code, r.room_number, b.name as building_name
              FROM invoices i
-             JOIN students s ON s.id = i.student_id
              JOIN contracts c ON c.id = i.contract_id
+             JOIN students s ON s.id = c.student_id
              JOIN rooms r ON r.id = c.room_id
              JOIN buildings b ON b.id = r.building_id
              WHERE i.id = ?",
@@ -230,9 +230,14 @@ class BillingController extends BaseController
         $id = (int)$params['id'];
 
         // Check access: admin or invoice owner
+        // Fixed: joined through contracts since invoices has no direct student_id column
         $invoice = $this->db->selectOne(
-            "SELECT i.*, s.user_id FROM invoices i
-             JOIN students s ON s.id = i.student_id
+            "SELECT i.*, s.user_id, s.full_name, s.student_code, r.room_number, b.name as building_name
+             FROM invoices i
+             JOIN contracts c ON c.id = i.contract_id
+             JOIN students s ON s.id = c.student_id
+             JOIN rooms r ON r.id = c.room_id
+             JOIN buildings b ON b.id = r.building_id
              WHERE i.id = ?",
             [$id]
         );
@@ -241,12 +246,22 @@ class BillingController extends BaseController
             $this->abort(404, 'Hóa đơn không tồn tại');
         }
 
-        if (!$this->isAdmin() && $invoice['user_id'] !== $this->auth('id')) {
+        if (!$this->isAdmin() && (int)$invoice['user_id'] !== (int)$this->auth('id')) {
             $this->abort(403, 'Không có quyền');
         }
 
-        // Generate PDF
-        $tempFile = '/tmp/invoice_' . $id . '_' . time() . '.pdf';
+        // If FPDF autoload is not available, render a beautiful printable HTML invoice instead of crashing!
+        if (!file_exists(BASE_PATH . '/vendor/autoload.php')) {
+            $this->view('admin/invoices/print', [
+                'title'   => 'In hóa đơn #' . $id,
+                'invoice' => $invoice,
+            ], false); // Không dùng main layout, dùng layout in riêng biệt
+            return;
+        }
+
+        // Generate PDF using temp directory (cross-platform safe: sys_get_temp_dir())
+        $tempDir = sys_get_temp_dir();
+        $tempFile = $tempDir . DIRECTORY_SEPARATOR . 'invoice_' . $id . '_' . time() . '.pdf';
 
         if ($this->pdfGenerator->generate($id, $tempFile)) {
             // Send file
@@ -306,8 +321,12 @@ class BillingController extends BaseController
         }
 
         $invoices = $this->db->select(
-            "SELECT i.* FROM invoices i
-             WHERE i.student_id = ?
+            "SELECT i.*, r.room_number, b.name as building_name
+             FROM invoices i
+             JOIN contracts c ON c.id = i.contract_id
+             JOIN rooms r ON r.id = c.room_id
+             JOIN buildings b ON b.id = r.building_id
+             WHERE c.student_id = ?
              ORDER BY i.created_at DESC",
             [$student['id']]
         );

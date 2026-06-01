@@ -254,7 +254,17 @@ class Router
         // Loại bỏ optional segments còn lại nếu không được cung cấp
         $uri = preg_replace('/\/:[^\/]+/', '', $uri);
 
-        $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $publicBase = rtrim(dirname($scriptName), '/\\');
+        $rootBase   = rtrim(dirname($publicBase), '/\\');
+
+        if (str_contains($requestUri, '/public/') || str_ends_with($requestUri, '/public')) {
+            $base = $publicBase;
+        } else {
+            $base = ($rootBase !== '' && $rootBase !== '/' && $rootBase !== '\\') ? $rootBase : '';
+        }
+
         return $base . $uri;
     }
 
@@ -393,7 +403,7 @@ class Router
         ];
 
         $class = $map[$name] ?? $name;
-        $file  = __DIR__ . "/../middleware/{$class}.php";
+        $file  = __DIR__ . "/../../middleware/Middleware.php";
 
         if (!class_exists($class) && file_exists($file)) {
             require_once $file;
@@ -440,13 +450,17 @@ class Router
             $uri = strstr($uri, '?', true);
         }
 
-        // Bỏ base path (khi app chạy trong subfolder /ktx/public)
-        $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-        if ($scriptDir !== '' && str_starts_with($uri, $scriptDir)) {
+        // Bỏ base path (khi app chạy trong subfolder /testfinal/public hoặc /testfinal)
+        $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+        $rootDir   = rtrim(dirname($scriptDir), '/\\');
+
+        if ($scriptDir !== '' && $scriptDir !== '/' && str_starts_with($uri, $scriptDir)) {
             $uri = substr($uri, strlen($scriptDir));
+        } elseif ($rootDir !== '' && $rootDir !== '/' && $rootDir !== '\\' && str_starts_with($uri, $rootDir)) {
+            $uri = substr($uri, strlen($rootDir));
         }
 
-        return '/' . trim(urldecode($uri), '/') ?: '/';
+        return ('/' . trim(urldecode($uri), '/')) ?: '/';
     }
 
     private function handleNotFound(string $uri): void

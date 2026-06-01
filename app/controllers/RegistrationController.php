@@ -442,14 +442,14 @@ class RegistrationController extends BaseController
         // Semester 1: 9-12, Semester 2: 1-5
         if ($month >= 9) {
             $year = (int)date('Y');
-            $semester = 1;
+            $semester = 'HK1';
         } elseif ($month >= 1 && $month <= 5) {
             $year = (int)date('Y') - 1;
-            $semester = 2;
+            $semester = 'HK2';
         } else {
-            // Summer: use previous year sem 2
+            // Summer: use HKH
             $year = (int)date('Y') - 1;
-            $semester = 2;
+            $semester = 'HKH';
         }
 
         return [
